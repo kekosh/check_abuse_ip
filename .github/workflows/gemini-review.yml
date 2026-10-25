@@ -21,8 +21,10 @@ jobs:
         uses: google-github-actions/run-gemini-cli@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_CLI_TRUST_WORKSPACE: "true"
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_model: "gemini-2.5-flash"
           model: "gemini-2.5-flash" # または "gemini-2.5-pro"
           prompt: |
             現在のブランチと origin/${{ github.base_ref }} の差分（git diff）を確認し、
