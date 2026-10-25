@@ -24,8 +24,7 @@ jobs:
           GEMINI_CLI_TRUST_WORKSPACE: "true"
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
-          gemini_model: "gemini-2.5-flash"
-          model: "gemini-2.5-flash" # または "gemini-2.5-pro"
+          gemini_model: "gemini-3.8-flash"
           prompt: |
             現在のブランチと origin/${{ github.base_ref }} の差分（git diff）を確認し、
             シニアエンジニアの視点で以下の観点からコードレビューを行い、
