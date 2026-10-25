@@ -12,6 +12,7 @@
 * **安全な設定管理**: スクリプトと同階層の `config.yml` からAPIキーを読み込み。ファイル未存在時はテンプレートを自動生成（権限 `0600`）して設定を案内。
 * **外部gem非依存**: Ruby標準ライブラリ（`csv`, `net/http`, `uri`, `ipaddr`, `json`, `yaml`）のみで動作。
 * **危険度順ソート**: 判定結果を悪意スコア降順（高リスクが先頭）でソートして出力。
+* **判定結果サマリ表示**: 実行完了時にステータス別（High Risk, Suspicious, Clean等）の件数サマリを標準出力に表示し、ファイルを開かずに全体結果を把握可能。
 
 ---
 
@@ -100,7 +101,31 @@ invalid-ip-string,,Invalid IP
 
 ---
 
-## 6. スクリプト実装コード (`abuse_check.rb`)
+## 6. 判定結果サマリの表示仕様
+
+スクリプト実行完了時に、CSVファイルを開かなくても判定結果の全体内訳や危険IPの有無を即座に確認できるよう、ステータス別の件数カウントサマリを標準出力に表示します。
+
+```text
+========================================
+判定結果サマリ (対象IP数: 8 件)
+----------------------------------------
+  High Risk             :    2 件
+  Suspicious            :    1 件
+  Low Risk              :    0 件
+  Clean                 :    1 件
+  Whitelisted           :    1 件
+  Private IP            :    1 件
+  Invalid IP            :    1 件
+  API Error             :    1 件
+========================================
+```
+
+* **主要ステータスの常時表示**: リスク判定（`High Risk`, `Suspicious`, `Low Risk`, `Clean`）および事前除外（`Whitelisted`, `Private IP`, `Invalid IP`）は、件数が0件の場合でも表示して安全確認を容易にします。
+* **異常系ステータスの動的表示**: `API Error` や `API Error (Rate Limit)` などの通信・制限エラーが発生した場合は、漏れなく末尾に追加して表示します。
+
+---
+
+## 7. スクリプト実装コード (`abuse_check.rb`)
 
 クラス構造を採用し、実行エントリポイント（`run`）以外の内部処理（APIキー取得、ホワイトリスト読み込み、IP判定、APIリクエスト等）をすべて **`private` メソッド** としてカプセル化しています。
 
@@ -119,6 +144,15 @@ class AbuseChecker
   OUTPUT_CSV          = 'abuse_check_result.csv'
   IP_COLUMN_NAME      = 'ip_address'
   WHITELIST_COL_NAME  = 'ip_or_cidr'
+  SUMMARY_STATUS_ORDER = [
+    'High Risk',
+    'Suspicious',
+    'Low Risk',
+    'Clean',
+    'Whitelisted',
+    'Private IP',
+    'Invalid IP'
+  ].freeze
 
   # クラスメソッドとして実行可能にする
   def self.run
@@ -154,6 +188,9 @@ class AbuseChecker
     # 4. 結果をCSVへ出力（悪意スコア降順ソート）
     export_results(results)
     puts "結果を出力しました: #{OUTPUT_CSV}"
+
+    # 5. 判定結果サマリの表示
+    display_summary(results)
   end
 
   private
@@ -343,6 +380,30 @@ class AbuseChecker
         csv << [ip, data[:abuse_score], data[:status]]
       end
     end
+  end
+
+  ##
+  # チェック結果のステータス別カウントサマリを標準出力に表示する。
+  #
+  def display_summary(results)
+    counts = Hash.new(0)
+    results.each_value { |data| counts[data[:status]] += 1 }
+
+    statuses = SUMMARY_STATUS_ORDER.dup
+    counts.each_key do |status|
+      statuses << status unless statuses.include?(status)
+    end
+
+    puts "\n" + '=' * 40
+    puts "判定結果サマリ (対象IP数: #{results.size} 件)"
+    puts '-' * 40
+    statuses.each do |status|
+      count = counts[status]
+      next if count.zero? && !SUMMARY_STATUS_ORDER.include?(status)
+
+      puts "  #{status.ljust(22)}: #{count.to_s.rjust(4)} 件"
+    end
+    puts '=' * 40
   end
 end
 

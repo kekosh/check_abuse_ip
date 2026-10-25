@@ -14,6 +14,15 @@ class AbuseChecker
   OUTPUT_CSV          = 'abuse_check_result.csv'
   IP_COLUMN_NAME      = 'ip_address'
   WHITELIST_COL_NAME  = 'ip_or_cidr'
+  SUMMARY_STATUS_ORDER = [
+    'High Risk',
+    'Suspicious',
+    'Low Risk',
+    'Clean',
+    'Whitelisted',
+    'Private IP',
+    'Invalid IP'
+  ].freeze
 
   # クラスメソッドとして実行可能にする
   def self.run
@@ -49,6 +58,9 @@ class AbuseChecker
     # 4. 結果をCSVへ出力（悪意スコア降順ソート）
     export_results(results)
     puts "結果を出力しました: #{OUTPUT_CSV}"
+
+    # 5. 判定結果サマリの表示
+    display_summary(results)
   end
 
   private
@@ -238,6 +250,30 @@ class AbuseChecker
         csv << [ip, data[:abuse_score], data[:status]]
       end
     end
+  end
+
+  ##
+  # チェック結果のステータス別カウントサマリを標準出力に表示する。
+  #
+  def display_summary(results)
+    counts = Hash.new(0)
+    results.each_value { |data| counts[data[:status]] += 1 }
+
+    statuses = SUMMARY_STATUS_ORDER.dup
+    counts.each_key do |status|
+      statuses << status unless statuses.include?(status)
+    end
+
+    puts "\n" + '=' * 40
+    puts "判定結果サマリ (対象IP数: #{results.size} 件)"
+    puts '-' * 40
+    statuses.each do |status|
+      count = counts[status]
+      next if count.zero? && !SUMMARY_STATUS_ORDER.include?(status)
+
+      puts "  #{status.ljust(22)}: #{count.to_s.rjust(4)} 件"
+    end
+    puts '=' * 40
   end
 end
 
