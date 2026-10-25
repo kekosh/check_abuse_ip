@@ -1,0 +1,10 @@
+ip_address,abuse_score,status
+185.220.101.5,100,High Risk
+141.98.11.22,24,Suspicious
+141.98.11.11,15,Low Risk
+203.0.113.15,0,Whitelisted
+198.51.100.88,0,Whitelisted
+192.168.1.50,0,Private IP
+127.0.0.1,0,Private IP
+8.8.8.8,0,Clean
+invalid-ip-string,,Invalid IP
