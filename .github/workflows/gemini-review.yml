@@ -1,4 +1,4 @@
-name: Gemini Code Review
+name: Gemini Official Code Review
 
 on:
   pull_request:
@@ -14,16 +14,20 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Run Gemini Code Review
-        uses: sshnaidm/gemini-code-review-action@v2
         with:
-          gemini-key: ${{ secrets.GEMINI_API_KEY }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          model: "gemini-2.5-flash"
-          review-title: "🤖 Gemini Code Review"
+          fetch-depth: 0
+
+      - name: Run Google Official Gemini Action
+        uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          model: "gemini-2.5-flash" # または "gemini-2.5-pro"
           prompt: |
-            あなたはシニアエンジニアです。以下の観点から日本語で簡潔にコードレビューを行ってください：
+            現在のブランチと origin/${{ github.base_ref }} の差分（git diff）を確認し、
+            シニアエンジニアの視点で以下の観点からコードレビューを行い、
+            gh pr comment コマンドを使ってPR #${{ github.event.pull_request.number }} に日本語でレビュー結果を投稿してください。
             - バグやロジックの誤り、エッジケースの考慮漏れ
             - セキュリティ上の脆弱性
             - パフォーマンスや可読性の改善点
