@@ -34,7 +34,7 @@ jobs:
           NODE_OPTIONS: "--dns-result-order=ipv4first"
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
-          gemini_model: "gemini-3.8-pro"
+          gemini_model: "gemini-3.8-flash"
           gemini_debug: "true"
           prompt: |
             以下の Pull Request の差分（git diff）を確認し、
