@@ -18,6 +18,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Google Official Gemini Action
+        id: gemini
         uses: google-github-actions/run-gemini-cli@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -25,10 +26,20 @@ jobs:
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           gemini_model: "gemini-3.8-flash"
+          gemini_debug: "true"
           prompt: |
             現在のブランチと origin/${{ github.base_ref }} の差分（git diff）を確認し、
-            シニアエンジニアの視点で以下の観点からコードレビューを行い、
-            gh pr comment コマンドを使ってPR #${{ github.event.pull_request.number }} に日本語でレビュー結果を投稿してください。
+            シニアエンジニアの視点で以下の観点からコードレビューを行ってください。
+            レビュー結果をマークダウン形式の日本語で出力してください。
             - バグやロジックの誤り、エッジケースの考慮漏れ
             - セキュリティ上の脆弱性
             - パフォーマンスや可読性の改善点
+            - 良い実装に関する評価
+
+      - name: Post Review Comment
+        if: steps.gemini.outputs.summary != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REVIEW_SUMMARY: ${{ steps.gemini.outputs.summary }}
+        run: |
+          echo "$REVIEW_SUMMARY" | gh pr comment ${{ github.event.pull_request.number }} --body-file -
