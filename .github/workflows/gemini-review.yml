@@ -17,6 +17,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get git diff
+        id: git_diff
+        run: |
+          DIFF=$(git --no-pager diff origin/${{ github.base_ref }}...HEAD)
+          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          echo "$DIFF" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Run Google Official Gemini Action
         id: gemini
         uses: google-github-actions/run-gemini-cli@v0
@@ -28,13 +36,18 @@ jobs:
           gemini_model: "gemini-3.8-flash"
           gemini_debug: "true"
           prompt: |
-            現在のブランチと origin/${{ github.base_ref }} の差分（git diff）を確認し、
-            シニアエンジニアの視点で以下の観点からコードレビューを行ってください。
-            レビュー結果をマークダウン形式の日本語で出力してください。
+            以下の Pull Request の差分（git diff）を確認し、
+            シニアエンジニアの視点でコードレビューを行ってください。
+            結果を日本語のマークダウン形式で出力してください。
             - バグやロジックの誤り、エッジケースの考慮漏れ
             - セキュリティ上の脆弱性
             - パフォーマンスや可読性の改善点
             - 良い実装に関する評価
+
+            ### PR差分:
+            ```diff
+            ${{ steps.git_diff.outputs.diff }}
+            ```
 
       - name: Post Review Comment
         if: steps.gemini.outputs.summary != ''
