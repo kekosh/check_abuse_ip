@@ -12,27 +12,18 @@ jobs:
   review:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Gemini PR Reviewer
-        uses: coderabbitai/ai-pr-reviewer@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      - name: Run Gemini Code Review
+        uses: sshnaidm/gemini-code-review-action@v2
         with:
-          debug: false
-          review_comment_lgtm: false
-          openai_heavy_model: "gemini-2.5-flash" # 使用するモデル
-          openai_light_model: "gemini-2.5-flash"
-          openai_base_url: "https://generativelanguage.googleapis.com/v1beta/openai/" # OpenAI互換エンドポイント経由でGeminiを呼ぶ
-          language: "ja-JP"
-          path_filters: |
-            !*.lock
-            !*.min.js
-            !dist/**
-          system_message: |
+          gemini-key: ${{ secrets.GEMINI_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          model: "gemini-2.5-flash"
+          review-title: "🤖 Gemini Code Review"
+          prompt: |
             あなたはシニアエンジニアです。以下の観点から日本語で簡潔にコードレビューを行ってください：
-            - バグやロジックの誤り、境界値・エッジケースの考慮漏れ
-            - セキュリティ脆弱性
-            - パフォーマンス上の懸念点
+            - バグやロジックの誤り、エッジケースの考慮漏れ
+            - セキュリティ上の脆弱性
+            - パフォーマンスや可読性の改善点
